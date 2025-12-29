@@ -107,13 +107,13 @@ const scrapeOldArticles = async () => {
             console.log("No pagination found, using current page (oldest articles)");
         }
 
-        // Step 3: Extract exactly 5 oldest articles data from last page(s)
-        console.log("Step 3: Extracting 5 oldest articles data...");
-        let articlesData = [];
+        // Step 3: Extract exactly 5 oldest article URLs from last page(s)
+        console.log("Step 3: Extracting 5 oldest article URLs...");
+        let articleLinks = [];
         let currentPageUrl = lastPageUrl;
         let articlesNeeded = 5;
 
-        while (articlesData.length < 5 && currentPageUrl) {
+        while (articleLinks.length < 5 && currentPageUrl) {
             console.log(`   Extracting from page: ${currentPageUrl}`);
 
             // Navigate to current page if not already there
@@ -125,11 +125,11 @@ const scrapeOldArticles = async () => {
                 await new Promise(resolve => setTimeout(resolve, 3000));
             }
 
-            // Extract article data directly from listing page
-            const pageArticles = await page.evaluate((baseUrl, needed) => {
-                const articles = [];
+            // Extract article URLs from current page
+            const pageLinks = await page.evaluate((baseUrl, needed) => {
+                const links = [];
 
-                // Find article entries on the page, excluding sidebar widgets
+                // Find article entries and extract their URLs
                 const articleEntries = document.querySelectorAll('.entry, .post, article, .blog-post');
 
                 // Filter out entries from sidebar and widget areas
@@ -138,69 +138,39 @@ const scrapeOldArticles = async () => {
                 );
 
                 for (let entry of validEntries) {
-                    if (articles.length >= needed) break;
+                    if (links.length >= needed) break;
 
-                    // Extract title from h2.entry-title a or similar
+                    // Extract URL from title link
                     const titleLink = entry.querySelector('h2.entry-title a, h2 a, .entry-title a, .post-title a');
-                    if (!titleLink) continue;
+                    if (titleLink) {
+                        const href = titleLink.getAttribute('href');
+                        if (href && href.includes('/blogs/') &&
+                            !href.includes('/tag/') &&
+                            !href.includes('/page/') &&
+                            !href.includes('#') &&
+                            href !== '/blogs/' &&
+                            href !== `${baseUrl}/blogs/` &&
+                            href.split('/').filter(segment => segment.length > 0).length >= 4) {
 
-                    const title = titleLink.textContent.trim();
-                    const url = titleLink.getAttribute('href');
-                    if (!url || !url.includes('/blogs/')) continue;
-
-                    const fullUrl = url.startsWith('http') ? url : baseUrl + url;
-
-                    // Extract content from excerpt or entry content on listing page
-                    let content = '';
-                    const contentSelectors = [
-                        '.entry-summary',
-                        '.post-excerpt',
-                        '.excerpt',
-                        '.entry-content p', // First paragraph of content
-                        '.post-content p',
-                        'p' // First paragraph in entry
-                    ];
-
-                    for (let selector of contentSelectors) {
-                        const contentElement = entry.querySelector(selector);
-                        if (contentElement && contentElement.textContent.trim().length > 50) {
-                            content = contentElement.textContent.trim();
-                            // Clean up whitespace
-                            content = content.replace(/\s+/g, ' ').replace(/\n+/g, '\n').trim();
-                            break;
-                        }
-                    }
-
-                    // Extract published date if available
-                    let publishedAt = new Date().toISOString();
-                    const dateSelectors = ['time', '.published', '.date', '.entry-date', '.post-date'];
-                    for (let selector of dateSelectors) {
-                        const dateElement = entry.querySelector(selector);
-                        if (dateElement) {
-                            const datetime = dateElement.getAttribute('datetime') || dateElement.textContent.trim();
-                            if (datetime) {
-                                publishedAt = new Date(datetime).toISOString();
-                                break;
+                            const fullUrl = href.startsWith('http') ? href : baseUrl + href;
+                            if (!links.includes(fullUrl)) {
+                                links.push(fullUrl);
                             }
                         }
                     }
-
-                    if (title && content && fullUrl) {
-                        articles.push({ title, content, url: fullUrl, publishedAt });
-                    }
                 }
 
-                return articles;
+                return links;
             }, BASE_URL, articlesNeeded);
 
-            // Add articles to our collection (take only what we need)
-            const articlesToAdd = pageArticles.slice(-articlesNeeded); // Get oldest articles from this page
-            articlesData = [...articlesToAdd, ...articlesData]; // Add to beginning since these are older
+            // Add links to our collection (take only what we need)
+            const linksToAdd = pageLinks.slice(-articlesNeeded); // Get oldest articles from this page
+            articleLinks = [...linksToAdd, ...articleLinks]; // Add to beginning since these are older
 
-            console.log(`   Found ${pageArticles.length} articles on this page, added ${articlesToAdd.length} to collection`);
+            console.log(`   Found ${pageLinks.length} articles on this page, added ${linksToAdd.length} to collection`);
 
             // Update how many more we need
-            articlesNeeded = 5 - articlesData.length;
+            articlesNeeded = 5 - articleLinks.length;
 
             // If we still need more articles, go to previous page
             if (articlesNeeded > 0) {
@@ -236,31 +206,107 @@ const scrapeOldArticles = async () => {
         }
 
         // Ensure we have exactly 5 articles (take the oldest 5)
-        articlesData = articlesData.slice(0, 5);
+        articleLinks = articleLinks.slice(0, 5);
 
-        console.log(`Found ${articlesData.length} oldest articles to save:`);
-        articlesData.forEach((article, index) => console.log(`  ${index + 1}. ${article.title} (${article.url})`));
+        console.log(`Found ${articleLinks.length} oldest article URLs to scrape:`);
+        articleLinks.forEach((link, index) => console.log(`  ${index + 1}. ${link}`));
 
-        if (articlesData.length < 5) {
-            console.log(`Only found ${articlesData.length} articles. The website might have fewer articles or structure changed.`);
+        if (articleLinks.length < 5) {
+            console.log(`Only found ${articleLinks.length} article URLs. The website might have fewer articles or structure changed.`);
             console.log("Please check the blogs page manually: https://beyondchats.com/blogs");
             return;
         }
 
-        // Step 4: Save articles to database
-        console.log("Step 4: Saving articles to database...");
-        for (const articleData of articlesData) {
+        // Step 4: Visit each article page individually and extract full content
+        console.log("Step 4: Scraping individual articles for full content...");
+        for (const link of articleLinks) {
             try {
-                const { title, content, url, publishedAt } = articleData;
+                console.log(`Scraping article: ${link}`);
+
+                // Use puppeteer for individual articles
+                const articlePage = await browser.newPage();
+                await articlePage.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+
+                await articlePage.goto(link, {
+                    waitUntil: 'networkidle2',
+                    timeout: 30000
+                });
+
+                // Extract structured data from full article page
+                const articleData = await articlePage.evaluate(() => {
+                    // Extract title
+                    const titleSelectors = [
+                        'h1',
+                        '.article-title',
+                        '.post-title',
+                        '.blog-title',
+                        '.elementor-heading-title.elementor-size-default',
+                        'h1.entry-title'
+                    ];
+                    let title = '';
+                    for (let selector of titleSelectors) {
+                        const element = document.querySelector(selector);
+                        if (element && element.textContent.trim()) {
+                            title = element.textContent.trim();
+                            break;
+                        }
+                    }
+
+                    // Extract full content (main article body only) - clean text without HTML tags
+                    const contentSelectors = [
+                        '.entry-content',  // WordPress standard
+                        '.post-content',   // Common post content
+                        '.article-content', // Article content
+                        '.blog-content',   // Blog content
+                        'article .content', // Content within article tags
+                        '.entry-card .content', // Content within entry cards
+                        '[class*="entry-card"] .content', // Content within entry-card elements
+                        // Avoid sidebar and widget areas
+                        'article:not(.elementor-widget)',
+                        '.post:not(.elementor-widget-sidebar):not(.elementor-element-0082f59)',
+                        '.entry:not(.elementor-widget-sidebar):not(.elementor-element-0082f59)'
+                    ];
+                    let content = '';
+                    for (let selector of contentSelectors) {
+                        const element = document.querySelector(selector);
+                        if (element && element.textContent.trim().length > 100) {
+                            // Use textContent to get clean text without HTML tags
+                            content = element.textContent.trim();
+                            // Clean up extra whitespace and newlines
+                            content = content.replace(/\s+/g, ' ').replace(/\n+/g, '\n').trim();
+                            break;
+                        }
+                    }
+
+                    // Extract publishedAt if available
+                    let publishedAt = new Date().toISOString(); // Default to current date
+                    const dateSelectors = ['time', '.published', '.date', '[datetime]', '.entry-date', '.post-date'];
+                    for (let selector of dateSelectors) {
+                        const element = document.querySelector(selector);
+                        if (element) {
+                            const datetime = element.getAttribute('datetime') || element.textContent.trim();
+                            if (datetime) {
+                                publishedAt = new Date(datetime).toISOString();
+                                break;
+                            }
+                        }
+                    }
+
+                    return { title, content, publishedAt };
+                });
+
+                await articlePage.close();
+
+                const { title, content, publishedAt } = articleData;
 
                 if (!title || !content) {
-                    console.log(`Skipping article due to missing data: ${url}`);
+                    console.log(`Skipping article due to missing data: ${link}`);
                     console.log(`Title found: "${title}", Content length: ${content.length}`);
                     continue;
                 }
 
-                // Check if URL does not already exist
-                const existingArticle = await Article.findOne({ url });
+                // Step 5: Store in database only if URL does not already exist
+                const existingArticle = await Article.findOne({ url: link });
                 if (existingArticle) {
                     console.log(`Article already exists: ${title}`);
                     continue;
@@ -270,7 +316,7 @@ const scrapeOldArticles = async () => {
                 await Article.create({
                     title,
                     content,
-                    url,
+                    url: link,
                     publishedAt,
                     version: "original",
                     source: "beyondchats"
@@ -278,11 +324,11 @@ const scrapeOldArticles = async () => {
 
                 console.log(`Successfully scraped and saved: ${title}`);
 
-                // Respectful delay between saves
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Respectful delay between requests
+                await new Promise(resolve => setTimeout(resolve, 2000));
 
             } catch (error) {
-                console.error(`Error saving article ${articleData.url}:`, error.message);
+                console.error(`Error scraping article ${link}:`, error.message);
                 continue;
             }
         }
