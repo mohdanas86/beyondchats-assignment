@@ -1,22 +1,17 @@
 import puppeteer from "puppeteer";
 import Article from "../models/articals.js";
 
-/**
- * Base URL for BeyondChats website
- */
+// Base URL for BeyondChats website
 const BASE_URL = "https://beyondchats.com";
 
-/**
- * Scrapes the 5 oldest blog articles from BeyondChats
- * Follows strict scraping flow: load blogs page -> find last page -> extract 5 oldest URLs -> scrape each article
- * @returns {Promise<void>}
- */
+// This function scrapes the 5 oldest blog articles from BeyondChats
+// It's a bit tricky because we need to find the last page first, then get the oldest articles
 const scrapeOldArticles = async () => {
     let browser;
     try {
         console.log("Starting article scraping...");
 
-        // Launch browser for dynamic content loading
+        // Launch browser - need this for dynamic content
         browser = await puppeteer.launch({
             headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -24,7 +19,7 @@ const scrapeOldArticles = async () => {
 
         const page = await browser.newPage();
 
-        // Set user agent to avoid blocking
+        // Set user agent so they don't block us
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
 
         // Step 1: Load the blogs listing page
@@ -34,10 +29,10 @@ const scrapeOldArticles = async () => {
             timeout: 30000
         });
 
-        // Wait for dynamic content to load
+        // Wait for dynamic content to load - important!
         await new Promise(resolve => setTimeout(resolve, 3000));
 
-        // Step 2: Identify pagination mechanism and navigate to LAST PAGE
+        // Step 2: Find pagination and go to LAST PAGE to get oldest articles
         console.log("Step 2: Finding pagination and navigating to last page...");
 
         // Check for pagination and get the last page URL

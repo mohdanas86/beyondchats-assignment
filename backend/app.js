@@ -9,17 +9,17 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to database
+// Connect to database first
 connectDB();
 
-// Middleware
+// Basic middleware setup
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Set up routes
 app.use("/api/articles", articleRoutes);
 
-// Start server
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

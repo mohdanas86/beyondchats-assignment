@@ -1,10 +1,6 @@
 import Article from "../models/articals.js";
 
-/**
- * @desc Get all articles
- * @route GET /api/articles
- * @access Public
- */
+// Get all articles - pretty straightforward
 export const getArticles = async (req, res) => {
     try {
         const articles = await Article.find();
@@ -22,11 +18,7 @@ export const getArticles = async (req, res) => {
     }
 };
 
-/**
- * @desc Get single article by ID
- * @route GET /api/articles/:id
- * @access Public
- */
+// Get single article by ID
 export const getArticle = async (req, res) => {
     try {
         const article = await Article.findById(req.params.id);
@@ -49,11 +41,7 @@ export const getArticle = async (req, res) => {
     }
 };
 
-/**
- * @desc Create a new article
- * @route POST /api/articles
- * @access Public
- */
+// Create a new article
 export const createArticle = async (req, res) => {
     try {
         const article = await Article.create(req.body);
@@ -70,11 +58,7 @@ export const createArticle = async (req, res) => {
     }
 };
 
-/**
- * @desc Update an article by ID
- * @route PUT /api/articles/:id
- * @access Public
- */
+// Update an article by ID
 export const updateArticle = async (req, res) => {
     try {
         const article = await Article.findByIdAndUpdate(
@@ -101,11 +85,7 @@ export const updateArticle = async (req, res) => {
     }
 };
 
-/**
- * @desc Delete an article by ID
- * @route DELETE /api/articles/:id
- * @access Public
- */
+// Delete an article by ID
 export const deleteArticle = async (req, res) => {
     try {
         const article = await Article.findByIdAndDelete(req.params.id);
