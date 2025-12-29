@@ -325,18 +325,24 @@ TASK:
 5. Keep the content informative and well-structured
 6. Do NOT copy content directly from reference articles - only use them as style guides
 
-IMPORTANT: Return ONLY the rewritten article content in HTML format, without the title. The content should be ready to use as the article body.
+IMPORTANT FORMATTING REQUIREMENTS:
+- Return ONLY the rewritten article content as CLEAN TEXT (no HTML tags)
+- Use plain text formatting with proper line breaks
+- Use markdown-style formatting for headings (like ## Heading)
+- Keep paragraphs separated by double line breaks
+- Make it readable and well-formatted for web display
+- Do not include the title in the response
 `;
 
         const result = await model.generateContent(prompt);
         const rewrittenContent = result.response.text();
 
-        // Add citations at the bottom
+        // Add citations at the bottom in plain text format
         const citations = referenceUrls.map((url, index) =>
-            `<p><em>Reference ${index + 1}: <a href="${url}" target="_blank">${url}</a></em></p>`
+            `Reference ${index + 1}: ${url}`
         ).join('\n');
 
-        return rewrittenContent + '\n\n<hr>\n<h3>References</h3>\n' + citations;
+        return rewrittenContent + '\n\n---\n\nReferences\n' + citations;
 
     } catch (error) {
         console.error('Error with Gemini API:', error.message);
