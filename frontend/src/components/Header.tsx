@@ -4,11 +4,8 @@ import { Link } from 'react-router-dom';
 const Header: React.FC = () => {
     return (
         <nav className="bg-slate-900 fixed w-full z-20 top-0 start-0 border-b border-gray-200">
-            <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
+            <div className="max-w-7xl flex flex-wrap items-center justify-between mx-auto p-4">
                 <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse">
-                    <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold text-sm">BC</span>
-                    </div>
                     <span className="self-center text-xl text-white font-semibold whitespace-nowrap">BeyondChats</span>
                 </Link>
                 <button data-collapse-toggle="navbar-default" type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-700 rounded md:hidden hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300" aria-controls="navbar-default" aria-expanded="false">
