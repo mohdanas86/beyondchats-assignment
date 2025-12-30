@@ -124,9 +124,9 @@ async function searchFallback(query) {
 }
 
 /**
- * Scrape main content from a given URL
+ * Scrape main content from a given URL with better structure extraction
  * @param {string} url - The URL to scrape
- * @returns {Promise<string>} - The main content
+ * @returns {Promise<string>} - The main content in structured format
  */
 async function scrapeArticleContent(url) {
     try {
@@ -136,15 +136,57 @@ async function scrapeArticleContent(url) {
         });
 
         const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
         await page.goto(url, {
             waitUntil: 'networkidle2',
             timeout: 30000
         });
 
-        // Extract main content
+        // Extract structured content
         const content = await page.evaluate(() => {
+            // Helper function to get text content with structure
+            const getStructuredContent = (element) => {
+                if (!element) return '';
+
+                const content = [];
+                const children = Array.from(element.children);
+
+                for (const child of children) {
+                    const tagName = child.tagName.toLowerCase();
+                    const text = child.textContent?.trim();
+
+                    if (!text) continue;
+
+                    // Extract headings
+                    if (tagName === 'h1' || tagName === 'h2' || tagName === 'h3' || tagName === 'h4') {
+                        content.push(`## ${text}`);
+                    }
+                    // Extract paragraphs
+                    else if (tagName === 'p') {
+                        content.push(text);
+                    }
+                    // Extract lists
+                    else if (tagName === 'ul' || tagName === 'ol') {
+                        const listItems = Array.from(child.querySelectorAll('li'))
+                            .map(li => li.textContent?.trim())
+                            .filter(item => item)
+                            .map(item => `- ${item}`);
+                        content.push(...listItems);
+                    }
+                    // Extract blockquotes
+                    else if (tagName === 'blockquote') {
+                        content.push(`> ${text}`);
+                    }
+                    // Recursively process other elements
+                    else if (child.children.length > 0) {
+                        content.push(getStructuredContent(child));
+                    }
+                }
+
+                return content.filter(item => item).join('\n\n');
+            };
+
             // Try different selectors for main content
             const selectors = [
                 'article',
@@ -154,20 +196,42 @@ async function scrapeArticleContent(url) {
                 'main',
                 '.entry-content',
                 '.post-content',
-                '.article-content'
+                '.article-content',
+                '.blog-content'
             ];
 
             for (let selector of selectors) {
                 const element = document.querySelector(selector);
-                if (element && element.textContent.trim().length > 200) {
-                    return element.textContent.trim();
+                if (element && element.textContent && element.textContent.trim().length > 200) {
+                    const structuredContent = getStructuredContent(element);
+                    if (structuredContent.length > 200) {
+                        return structuredContent;
+                    }
                 }
             }
 
-            // Fallback: get all paragraph text
-            const paragraphs = Array.from(document.querySelectorAll('p'));
-            const text = paragraphs.map(p => p.textContent.trim()).join('\n\n');
-            return text.length > 200 ? text : '';
+            // Fallback: extract all paragraphs and headings
+            const elements = document.querySelectorAll('h1, h2, h3, h4, p, li');
+            const fallbackContent = Array.from(elements)
+                .map(el => {
+                    const tag = el.tagName.toLowerCase();
+                    const text = el.textContent?.trim();
+                    if (!text) return '';
+
+                    if (tag.startsWith('h')) {
+                        const level = tag.charAt(1);
+                        return `${'#'.repeat(parseInt(level))} ${text}`;
+                    } else if (tag === 'p') {
+                        return text;
+                    } else if (tag === 'li') {
+                        return `- ${text}`;
+                    }
+                    return '';
+                })
+                .filter(item => item)
+                .join('\n\n');
+
+            return fallbackContent || '';
         });
 
         await browser.close();
@@ -180,54 +244,163 @@ async function scrapeArticleContent(url) {
 }
 
 /**
- * Use Gemini AI to rewrite the article based on reference articles
+ * Use Gemini AI to rewrite the article in markdown format based on reference articles
  * @param {string} originalTitle - Original article title
  * @param {string} originalContent - Original article content
  * @param {string[]} referenceContents - Array of reference article contents
  * @param {string[]} referenceUrls - Array of reference URLs
- * @returns {Promise<string>} - Rewritten article content
+ * @returns {Promise<string>} - Rewritten article content in markdown
  */
 async function rewriteArticleWithGemini(originalTitle, originalContent, referenceContents, referenceUrls) {
     try {
+        //         const prompt = `You are an expert content writer and editor. Your task is to rewrite and enhance an article to match the quality, structure, and formatting of top-ranking articles on the same topic.
+
+        // ORIGINAL ARTICLE TO ENHANCE:
+        // Title: ${originalTitle}
+        // Content: ${originalContent}
+
+        // REFERENCE ARTICLES (Study these for structure, tone, and formatting):
+        // ${referenceContents.map((content, index) => `
+        // Reference ${index + 1}:
+        // ${content.substring(0, 1500)}
+        // `).join('\n')}
+
+        // YOUR TASK:
+        // 1. Analyze the reference articles and identify their structure, writing style, and formatting patterns
+        // 2. Rewrite the original article to match the professional quality and structure of the reference articles
+        // 3. Improve clarity, engagement, and readability while maintaining factual accuracy
+        // 4. Use proper markdown formatting for better presentation
+
+        // REQUIRED MARKDOWN STRUCTURE:
+        // - Use # for main title (but don't include it in response)
+        // - Use ## for major section headings
+        // - Use ### for subsections
+        // - Use **bold** for emphasis and key terms
+        // - Use proper paragraph breaks
+        // - Use bullet points (-) for lists
+        // - Use numbered lists (1., 2., 3.) for steps or processes
+        // - Use > for important quotes or highlights
+        // - Keep content comprehensive but concise
+        // - End with a strong conclusion
+
+        // CONTENT REQUIREMENTS:
+        // - Maintain all key information from original
+        // - Add relevant insights inspired by reference articles
+        // - Improve flow and logical progression
+        // - Use professional, engaging language
+        // - Ensure content is SEO-friendly and valuable
+
+        // FORMATTING REQUIREMENTS:
+        // - Return ONLY the article content in markdown format
+        // - Do NOT include the title
+        // - Use proper markdown syntax
+        // - Ensure readable structure with clear headings
+        // - Add citations section at the end
+
+        // CITATIONS:
+        // After the main content, add:
+        // ---
+        // **References:**
+        // ${referenceUrls.map((url, index) => `${index + 1}. ${url}`).join('\n')}
+
+        // Make the rewritten article significantly better than the original while staying true to the core message.`;
+
         const prompt = `
-You are a professional content writer. I have an original article and want you to rewrite it to match the style and formatting of similar high-quality articles found online.
+You are a senior SEO content editor and technical writer.
 
-ORIGINAL ARTICLE:
-Title: ${originalTitle}
-Content: ${originalContent}
+Your task is to UPDATE and ENHANCE an existing article so that its:
+- Structure
+- Formatting
+- Depth
+- Section flow
+closely resemble the style of top-ranking articles on Google for the same topic,
+WITHOUT copying or paraphrasing them directly.
 
-REFERENCE ARTICLES (for style and formatting reference):
+━━━━━━━━━━━━━━━━━━━━━━
+ORIGINAL ARTICLE (SOURCE CONTENT)
+━━━━━━━━━━━━━━━━━━━━━━
+Title:
+${originalTitle}
+
+Content:
+${originalContent}
+
+━━━━━━━━━━━━━━━━━━━━━━
+TOP-RANKING REFERENCE ARTICLES
+(For STRUCTURE & FORMAT STUDY ONLY)
+━━━━━━━━━━━━━━━━━━━━━━
 ${referenceContents.map((content, index) => `
-Reference ${index + 1}:
-${content.substring(0, 1000)}...
-`).join('\n')}
+Reference Article ${index + 1} (Excerpt):
+${content.substring(0, 2000)}
+`).join("\n")}
 
-TASK:
-1. Rewrite the original article to match the professional writing style, formatting, and structure of the reference articles
-2. Maintain the core information and facts from the original
-3. Improve the readability, flow, and engagement
-4. Use proper headings, paragraphs, and formatting like the reference articles
-5. Keep the content informative and well-structured
-6. Do NOT copy content directly from reference articles - only use them as style guides
+━━━━━━━━━━━━━━━━━━━━━━
+YOUR OBJECTIVE
+━━━━━━━━━━━━━━━━━━━━━━
+Rewrite the ORIGINAL ARTICLE so that it:
+1. Matches the **section structure, heading hierarchy, and formatting patterns**
+   used by the top-ranking reference articles.
+2. Improves clarity, depth, and professional tone.
+3. Expands explanations where necessary to match ranking articles’ completeness.
+4. Remains factually consistent with the original article.
+5. Is ORIGINAL — do NOT copy sentences or phrasing from reference articles.
 
-IMPORTANT FORMATTING REQUIREMENTS:
-- Return ONLY the rewritten article content as CLEAN TEXT (no HTML tags)
-- Use plain text formatting with proper line breaks
-- Use markdown-style formatting for headings (like ## Heading)
-- Keep paragraphs separated by double line breaks
-- Make it readable and well-formatted for web display
-- Do not include the title in the response
+━━━━━━━━━━━━━━━━━━━━━━
+STRICT CONTENT RULES (IMPORTANT)
+━━━━━━━━━━━━━━━━━━━━━━
+- Do NOT plagiarize or closely paraphrase the reference articles.
+- Do NOT introduce unverifiable facts.
+- Do NOT remove core ideas from the original article.
+- Do NOT include promotional language or marketing fluff.
+- Do NOT mention reference articles inside the content body.
+
+━━━━━━━━━━━━━━━━━━━━━━
+FORMATTING REQUIREMENTS (MANDATORY)
+━━━━━━━━━━━━━━━━━━━━━━
+Return ONLY the rewritten article in MARKDOWN format.
+
+Formatting rules:
+- DO NOT include the main title (it is handled separately).
+- Use ## for major sections.
+- Use ### for subsections where helpful.
+- Use short, readable paragraphs.
+- Use bullet points (-) for lists.
+- Use numbered lists (1., 2., 3.) for step-by-step explanations.
+- Use **bold text** for key terms and important concepts.
+- Maintain a logical flow similar to top-ranking articles.
+
+━━━━━━━━━━━━━━━━━━━━━━
+CONTENT QUALITY GUIDELINES
+━━━━━━━━━━━━━━━━━━━━━━
+- Content should feel authoritative and editorial-quality.
+- Improve transitions between sections.
+- Add context and explanations inspired by reference articles.
+- Optimize for SEO readability (clear headings, scannable sections).
+- End with a concise, insightful conclusion.
+
+━━━━━━━━━━━━━━━━━━━━━━
+REFERENCES SECTION (REQUIRED)
+━━━━━━━━━━━━━━━━━━━━━━
+After the article content, append:
+
+---
+**References**
+${referenceUrls.map((url, index) => `${index + 1}. ${url}`).join("\n")}
+
+━━━━━━━━━━━━━━━━━━━━━━
+FINAL OUTPUT REQUIREMENT
+━━━━━━━━━━━━━━━━━━━━━━
+Return ONLY the updated article content in valid Markdown.
+No explanations.
+No title.
+No extra commentary.
 `;
+
 
         const result = await model.generateContent(prompt);
         const rewrittenContent = result.response.text();
 
-        // Add citations at the bottom in plain text format
-        const citations = referenceUrls.map((url, index) =>
-            `Reference ${index + 1}: ${url}`
-        ).join('\n');
-
-        return rewrittenContent + '\n\n---\n\nReferences\n' + citations;
+        return rewrittenContent;
 
     } catch (error) {
         console.error('Error with Gemini API:', error.message);

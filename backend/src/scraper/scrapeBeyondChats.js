@@ -247,7 +247,7 @@ const scrapeOldArticles = async () => {
                         }
                     }
 
-                    // Extract full content (main article body only) - clean text without HTML tags
+                    // Extract full content (main article body only) - preserve some HTML structure
                     const contentSelectors = [
                         '.entry-content',  // WordPress standard
                         '.post-content',   // Common post content
@@ -265,10 +265,29 @@ const scrapeOldArticles = async () => {
                     for (let selector of contentSelectors) {
                         const element = document.querySelector(selector);
                         if (element && element.textContent.trim().length > 100) {
-                            // Use textContent to get clean text without HTML tags
-                            content = element.textContent.trim();
-                            // Clean up extra whitespace and newlines
-                            content = content.replace(/\s+/g, ' ').replace(/\n+/g, '\n').trim();
+                            // Get HTML content and clean it up
+                            let htmlContent = element.innerHTML;
+
+                            // Remove unwanted elements
+                            htmlContent = htmlContent.replace(/<script[^>]*>.*?<\/script>/gi, '');
+                            htmlContent = htmlContent.replace(/<style[^>]*>.*?<\/style>/gi, '');
+                            htmlContent = htmlContent.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '');
+                            htmlContent = htmlContent.replace(/<form[^>]*>.*?<\/form>/gi, '');
+
+                            // Convert common elements to clean HTML
+                            htmlContent = htmlContent.replace(/<h1[^>]*>/gi, '<h2>').replace(/<\/h1>/gi, '</h2>');
+                            htmlContent = htmlContent.replace(/<strong>/gi, '<b>').replace(/<\/strong>/gi, '</b>');
+
+                            // If HTML content is good, use it; otherwise fall back to text
+                            if (htmlContent.includes('<p>') || htmlContent.includes('<h')) {
+                                content = htmlContent;
+                            } else {
+                                // Fallback to text content with basic formatting
+                                content = element.textContent
+                                    .trim()
+                                    .replace(/\n\s*\n/g, '\n\n') // Preserve paragraph breaks
+                                    .replace(/\s+/g, ' '); // Clean extra spaces
+                            }
                             break;
                         }
                     }
