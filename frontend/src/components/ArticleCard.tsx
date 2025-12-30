@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
 import type { Article } from '../types/Article';
 
 interface ArticleCardProps {
@@ -42,10 +43,30 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
                 </a>
             </div>
 
-            <div
-                className="article-content"
-                dangerouslySetInnerHTML={{ __html: article.content }}
-            />
+            <div className="article-content">
+                <ReactMarkdown
+                    components={{
+                        h1: ({ children }) => <h3 className="markdown-h1">{children}</h3>,
+                        h2: ({ children }) => <h3 className="markdown-h2">{children}</h3>,
+                        h3: ({ children }) => <h4 className="markdown-h3">{children}</h4>,
+                        h4: ({ children }) => <h5 className="markdown-h4">{children}</h5>,
+                        p: ({ children }) => <p className="markdown-p">{children}</p>,
+                        ul: ({ children }) => <ul className="markdown-ul">{children}</ul>,
+                        ol: ({ children }) => <ol className="markdown-ol">{children}</ol>,
+                        li: ({ children }) => <li className="markdown-li">{children}</li>,
+                        blockquote: ({ children }) => <blockquote className="markdown-blockquote">{children}</blockquote>,
+                        strong: ({ children }) => <strong className="markdown-strong">{children}</strong>,
+                        em: ({ children }) => <em className="markdown-em">{children}</em>,
+                        a: ({ href, children }) => (
+                            <a href={href} className="markdown-link" target="_blank" rel="noopener noreferrer">
+                                {children}
+                            </a>
+                        ),
+                    }}
+                >
+                    {article.content}
+                </ReactMarkdown>
+            </div>
 
             {article.version === 'updated' && (
                 <div className="article-footer">
