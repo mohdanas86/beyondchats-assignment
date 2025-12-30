@@ -459,9 +459,9 @@ async function processArticle(article) {
             validUrls
         );
 
-        // Step 4: Update the article via API
-        console.log('   Updating article in database...');
-        const updateResponse = await axios.put(`${API_BASE_URL}/articles/${article._id}`, {
+        // Step 4: Create new enhanced article in database
+        console.log('   Creating enhanced article in database...');
+        const createResponse = await axios.post(`${API_BASE_URL}/articles`, {
             title: article.title,
             content: rewrittenContent,
             url: article.url,
@@ -469,10 +469,10 @@ async function processArticle(article) {
             version: 'updated'
         });
 
-        if (updateResponse.data.success) {
-            console.log('   Article successfully updated!');
+        if (createResponse.data.success) {
+            console.log('   Enhanced article successfully created!');
         } else {
-            console.log('   Failed to update article');
+            console.log('   Failed to create enhanced article');
         }
 
         // Add delay to be respectful
