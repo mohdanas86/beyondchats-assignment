@@ -9,6 +9,7 @@
     "dev": "node --watch app.js",
     "scrape": "node src/runScraper.js",
     "phase2": "node src/scripts/phase2Processor.js",
+    "clean-content": "node cleanContent.js",
     "test": "bash test-api.sh",
     "test:manual": "echo \"Error: no test specified\" && exit 1"
   },

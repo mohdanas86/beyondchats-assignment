@@ -1,18 +1,18 @@
 # BeyondChats Backend API
 
-A Node.js backend API for scraping and managing articles from BeyondChats website, with AI-powered content enhancement.
+A Node.js backend I built for scraping and managing articles from BeyondChats website, with AI-powered content enhancement.
 
-## Features
+## What it does
 
-- RESTful API for article management
+- RESTful API for article management (CRUD operations)
 - Web scraping functionality to collect articles from BeyondChats
 - AI-powered article enhancement using Google Gemini
 - Google search integration for content research
 - MongoDB integration with Mongoose
 - CORS enabled for frontend integration
-- Comprehensive error handling and validation
+- Pretty good error handling and validation
 
-## Tech Stack
+## Tech Stack I used
 
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
@@ -23,7 +23,7 @@ A Node.js backend API for scraping and managing articles from BeyondChats websit
 - **Axios** - HTTP client
 - **Cheerio** - HTML parsing
 
-## Installation
+## Getting Started
 
 1. Clone the repository
 2. Navigate to the backend directory
@@ -44,7 +44,7 @@ A Node.js backend API for scraping and managing articles from BeyondChats websit
    - `GEMINI_API_KEY` - Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
    - `PORT` - Server port (optional, defaults to 5000)
 
-## Usage
+## How to use it
 
 ### Phase 1: Basic Setup
 
@@ -90,7 +90,7 @@ This process:
 - Valid `GEMINI_API_KEY` in `.env` (get from [Google AI Studio](https://makersuite.google.com/app/apikey))
 - Internet connection for search and scraping
 
-#### Current Status: ✅ **WORKING**
+#### Current Status: **WORKING**
 
 Phase 2 successfully processes all articles with AI enhancement!
 

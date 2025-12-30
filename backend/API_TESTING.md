@@ -2,7 +2,7 @@
 
 This guide provides comprehensive instructions for testing all API endpoints in the BeyondChats backend.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Start the Server
 
@@ -350,7 +350,7 @@ All responses follow this structure:
 - Check browser console for CORS errors
 - Ensure frontend is running on different port
 
-## 📝 Testing Checklist
+## Testing Checklist
 
 - [ ] Server starts successfully
 - [ ] GET /api/articles returns empty array initially
