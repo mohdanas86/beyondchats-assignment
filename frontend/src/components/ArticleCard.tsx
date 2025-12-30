@@ -17,48 +17,48 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
 
     const getVersionBadge = (version?: string) => {
         if (version === 'updated') {
-            return <span className="version-badge updated">AI Enhanced</span>;
+            return <span className="inline-block px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">AI Enhanced</span>;
         }
-        return <span className="version-badge original">Original</span>;
+        return <span className="inline-block px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">Original</span>;
     };
 
     return (
-        <article className="article-card">
-            <div className="article-header">
-                <h2 className="article-title">{article.title}</h2>
+        <article className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200">
+            <div className="mb-4">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">{article.title}</h2>
                 {getVersionBadge(article.version)}
             </div>
 
-            <div className="article-meta">
-                <span className="article-date">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 text-sm text-gray-600">
+                <span className="mb-2 sm:mb-0">
                     Published: {formatDate(article.publishedAt)}
                 </span>
                 <a
                     href={article.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="article-link"
+                    className="text-blue-600 hover:text-blue-800 underline"
                 >
                     Read on BeyondChats →
                 </a>
             </div>
 
-            <div className="article-content">
+            <div className="prose prose-gray max-w-none">
                 <ReactMarkdown
                     components={{
-                        h1: ({ children }) => <h3 className="markdown-h1">{children}</h3>,
-                        h2: ({ children }) => <h3 className="markdown-h2">{children}</h3>,
-                        h3: ({ children }) => <h4 className="markdown-h3">{children}</h4>,
-                        h4: ({ children }) => <h5 className="markdown-h4">{children}</h5>,
-                        p: ({ children }) => <p className="markdown-p">{children}</p>,
-                        ul: ({ children }) => <ul className="markdown-ul">{children}</ul>,
-                        ol: ({ children }) => <ol className="markdown-ol">{children}</ol>,
-                        li: ({ children }) => <li className="markdown-li">{children}</li>,
-                        blockquote: ({ children }) => <blockquote className="markdown-blockquote">{children}</blockquote>,
-                        strong: ({ children }) => <strong className="markdown-strong">{children}</strong>,
-                        em: ({ children }) => <em className="markdown-em">{children}</em>,
+                        h1: ({ children }) => <h3 className="text-xl font-bold text-gray-900 mt-6 mb-4">{children}</h3>,
+                        h2: ({ children }) => <h3 className="text-lg font-semibold text-gray-900 mt-5 mb-3">{children}</h3>,
+                        h3: ({ children }) => <h4 className="text-base font-semibold text-gray-900 mt-4 mb-2">{children}</h4>,
+                        h4: ({ children }) => <h5 className="text-sm font-semibold text-gray-900 mt-3 mb-2">{children}</h5>,
+                        p: ({ children }) => <p className="text-gray-700 mb-4 leading-relaxed">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc list-inside mb-4 text-gray-700">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal list-inside mb-4 text-gray-700">{children}</ol>,
+                        li: ({ children }) => <li className="mb-1">{children}</li>,
+                        blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-4">{children}</blockquote>,
+                        strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                        em: ({ children }) => <em className="italic text-gray-700">{children}</em>,
                         a: ({ href, children }) => (
-                            <a href={href} className="markdown-link" target="_blank" rel="noopener noreferrer">
+                            <a href={href} className="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">
                                 {children}
                             </a>
                         ),
@@ -69,9 +69,10 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
             </div>
 
             {article.version === 'updated' && (
-                <div className="article-footer">
-                    <small className="enhancement-note">
-                        ✨ This article has been enhanced with AI for better readability and formatting
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                    <small className="text-sm text-gray-500 flex items-center">
+                        <span className="mr-2">✨</span>
+                        This article has been enhanced with AI for better readability and formatting
                     </small>
                 </div>
             )}

@@ -3,7 +3,6 @@ import Header from './components/Header';
 import ArticleList from './components/ArticleList';
 import { articleService } from './services/articleService';
 import type { Article } from './types/Article';
-import './App.css';
 
 function App() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -28,16 +27,14 @@ function App() {
   };
 
   return (
-    <div className="app">
+    <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="main-content">
-        <div className="container">
-          <ArticleList
-            articles={articles}
-            loading={loading}
-            error={error}
-          />
-        </div>
+      <main className="pt-20">
+        <ArticleList
+          articles={articles}
+          loading={loading}
+          error={error}
+        />
       </main>
     </div>
   );
