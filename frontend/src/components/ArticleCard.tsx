@@ -22,6 +22,11 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
         return <span className="inline-block px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">Original</span>;
     };
 
+    // Function to remove images and SVGs from HTML content
+    const stripImages = (htmlContent: string) => {
+        return htmlContent.replace(/<img[^>]*>/gi, '').replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, '');
+    };
+
     return (
         <article className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200">
             <div className="mb-4">
@@ -44,28 +49,37 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
             </div>
 
             <div className="prose prose-gray max-w-none">
-                <ReactMarkdown
-                    components={{
-                        h1: ({ children }) => <h3 className="text-xl font-bold text-gray-900 mt-6 mb-4">{children}</h3>,
-                        h2: ({ children }) => <h3 className="text-lg font-semibold text-gray-900 mt-5 mb-3">{children}</h3>,
-                        h3: ({ children }) => <h4 className="text-base font-semibold text-gray-900 mt-4 mb-2">{children}</h4>,
-                        h4: ({ children }) => <h5 className="text-sm font-semibold text-gray-900 mt-3 mb-2">{children}</h5>,
-                        p: ({ children }) => <p className="text-gray-700 mb-4 leading-relaxed">{children}</p>,
-                        ul: ({ children }) => <ul className="list-disc list-inside mb-4 text-gray-700">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal list-inside mb-4 text-gray-700">{children}</ol>,
-                        li: ({ children }) => <li className="mb-1">{children}</li>,
-                        blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-4">{children}</blockquote>,
-                        strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
-                        em: ({ children }) => <em className="italic text-gray-700">{children}</em>,
-                        a: ({ href, children }) => (
-                            <a href={href} className="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">
-                                {children}
-                            </a>
-                        ),
-                    }}
-                >
-                    {article.content}
-                </ReactMarkdown>
+                {article.version === 'original' ? (
+                    // Render HTML content for original articles (without images)
+                    <div
+                        className="text-gray-700 leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: stripImages(article.content) }}
+                    />
+                ) : (
+                    // Render markdown content for enhanced articles
+                    <ReactMarkdown
+                        components={{
+                            h1: ({ children }) => <h3 className="text-xl font-bold text-gray-900 mt-6 mb-4">{children}</h3>,
+                            h2: ({ children }) => <h3 className="text-lg font-semibold text-gray-900 mt-5 mb-3">{children}</h3>,
+                            h3: ({ children }) => <h4 className="text-base font-semibold text-gray-900 mt-4 mb-2">{children}</h4>,
+                            h4: ({ children }) => <h5 className="text-sm font-semibold text-gray-900 mt-3 mb-2">{children}</h5>,
+                            p: ({ children }) => <p className="text-gray-700 mb-4 leading-relaxed">{children}</p>,
+                            ul: ({ children }) => <ul className="list-disc list-inside mb-4 text-gray-700">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal list-inside mb-4 text-gray-700">{children}</ol>,
+                            li: ({ children }) => <li className="mb-1">{children}</li>,
+                            blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-600 my-4">{children}</blockquote>,
+                            strong: ({ children }) => <strong className="font-semibold text-gray-900">{children}</strong>,
+                            em: ({ children }) => <em className="italic text-gray-700">{children}</em>,
+                            a: ({ href, children }) => (
+                                <a href={href} className="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">
+                                    {children}
+                                </a>
+                            ),
+                        }}
+                    >
+                        {article.content}
+                    </ReactMarkdown>
+                )}
             </div>
 
             {article.version === 'updated' && (
